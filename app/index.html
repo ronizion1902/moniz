@@ -277,7 +277,6 @@ nav.tabbar button[aria-selected="true"] { color: var(--accent); opacity: 1; back
           <label class="f"><span id="lbName"></span><input id="prefName" type="text" maxlength="24" autocomplete="given-name"></label>
           <label class="f"><span id="lbAddr"></span><select id="prefGender"><option value="f"></option><option value="m"></option></select></label>
         </div>
-        <div style="display:grid;gap:10px"><span id="lbColors" style="font-size:.78rem;color:var(--muted)"></span><div id="swatches" style="display:flex;gap:18px;flex-wrap:wrap"></div></div>
       </div></div>
     <div><p class="section-label" id="lblMyCats"></p>
       <div class="card">
@@ -600,7 +599,7 @@ function applyLang() {
    ["ttlInsights","insights"],["lbRisk","risk"],["lbHorizon","horizon"],["askBtn","analyze"],["noteAdvice","noteAdvice"],["lblFreeQ","freeQ"],
    ["ttlSettings","settings"],["lblGoal","goal"],["lbGoalName","goalName"],["lbGoalTarget","goalTarget"],["lblReminders","reminders"],["noteRem","noteRem"],
    ["lblBudgets","budgets"],["lbBudTotal","budTotal"],["noteBud","noteBud"],
-   ["lblPersonal","personal"],["lbName","yourName"],["lbAddr","address"],["lbColors","colors"],["lblMyCats","myCats"],["noteCats","catsNote"],
+   ["lblPersonal","personal"],["lbName","yourName"],["lbAddr","address"],["lblMyCats","myCats"],["noteCats","catsNote"],
    ["lblBackup","backup"],["noteBackup","noteBackup"],["btnExport","exportBtn"],["btnImport","importBtn"],["btnImportGo","importGo"],["lblFixed","fixed"],["lblAddFixed","addFixed"],["lbFxName","fxName"],["lbFxAmount","amount"],["lbFxDay","fxDay"],["lbFxType","type"],["lbFxCat","category"],["noteFixed","noteFixed"],["btnAddFx","add"]].forEach(([id, k]) => { const el = document.getElementById(id); if (el) el.textContent = T(k); });
   const o = (sel, keys) => document.querySelectorAll(sel + " option").forEach((op, i) => (op.textContent = T(keys[i])));
   o("#txType", ["expense", "incomeOne"]); o("#pRisk", ["risk_low", "risk_mid", "risk_high"]); o("#pHorizon", ["hz_short", "hz_mid", "hz_long"]);
@@ -637,8 +636,7 @@ function render() {
   const focusId = document.activeElement && document.activeElement.id;
   $("#exampleBanner").hidden = !state.example;
   const h = today.getHours();
-  const pal = state.prefs.palette; if (pal && pal !== "bordeaux") document.documentElement.setAttribute("data-palette", pal); else document.documentElement.removeAttribute("data-palette");
-  try { localStorage.setItem("kupa-pal", pal || "bordeaux"); } catch (e) {}
+  document.documentElement.removeAttribute("data-palette");
   $("#greet").textContent = T(h < 12 ? "morning" : h < 17 ? "noon" : h < 22 ? "evening" : "night") + (state.prefs.name ? ", " + state.prefs.name : "");
   $("#greetSub").textContent = monthName(THIS_MONTH);
   const m = monthTotals(THIS_MONTH), p = portfolio(), rate = m.inc ? (m.net / m.inc) * 100 : 0;
@@ -707,8 +705,6 @@ function render() {
 
   if (document.activeElement !== $("#prefName")) $("#prefName").value = state.prefs.name || "";
   $("#prefGender").value = state.prefs.gender === "m" ? "m" : "f";
-  const PALS = [["bordeaux", "#7A1F33"], ["navy", "#1F3A5F"], ["forest", "#2F5141"], ["mocha", "#5B4033"]];
-  $("#swatches").innerHTML = PALS.map(([k, c]) => `<button class="swatch" type="button" data-pal="${k}" aria-pressed="${(state.prefs.palette || "bordeaux") === k}"><i style="background:linear-gradient(135deg, ${c} 50%, #F3E4D0 50%)"></i>${T("pal_" + k)}</button>`).join("");
   $("#catChips").innerHTML = state.prefs.cats.map((c) => `<span class="catchip">${esc(c)}<button type="button" data-rmcat="${esc(c)}" aria-label="${T("del")} ${esc(c)}">×</button></span>`).join("");
   $("#noteRem").textContent = T(isOwner ? "noteRem" : "noteRemOther");
   if (document.activeElement !== $("#goalName")) $("#goalName").value = g.name || "";
@@ -762,7 +758,6 @@ $("#pHorizon").addEventListener("change", (e) => softSet((s) => { s.profile = { 
 const setPref = (patch) => commit((s) => { s.prefs = { ...s.prefs, ...patch }; });
 $("#prefName").addEventListener("change", (e) => setPref({ name: e.target.value.trim().slice(0, 24) }));
 $("#prefGender").addEventListener("change", (e) => { setPref({ gender: e.target.value === "m" ? "m" : "f" }); applyLang(); render(); });
-$("#swatches").addEventListener("click", (e) => { const k = e.target.closest("[data-pal]")?.dataset.pal; if (k) setPref({ palette: k }); });
 $("#catForm").addEventListener("submit", (e) => { e.preventDefault(); const c = $("#catNew").value.trim().slice(0, 24); if (!c || catsOut().includes(c) || CATS_IN.includes(c)) { $("#catNew").value = ""; return; }
   setPref({ cats: [...state.prefs.cats, c] }); $("#catNew").value = ""; fillCats(); });
 $("#catChips").addEventListener("click", (e) => { const c = e.target.closest("[data-rmcat]")?.dataset.rmcat; if (c) { setPref({ cats: state.prefs.cats.filter((x) => x !== c) }); fillCats(); } });
@@ -923,7 +918,6 @@ const MOON = '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>';
 const SUN = '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>';
 const isDark = () => { const t = document.documentElement.getAttribute("data-theme"); return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; };
 const paintThemeIcon = () => { $("#themeIcon").innerHTML = isDark() ? SUN : MOON; };
-try { const pl = localStorage.getItem("kupa-pal"); if (pl && pl !== "bordeaux") document.documentElement.setAttribute("data-palette", pl); } catch (e) {}
 try { const th = localStorage.getItem("kupa-theme"); if (th === "dark" || th === "light") document.documentElement.setAttribute("data-theme", th); } catch (e) {}
 $("#themeBtn").addEventListener("click", () => { const next = isDark() ? "light" : "dark"; document.documentElement.setAttribute("data-theme", next); try { localStorage.setItem("kupa-theme", next); } catch (e) {} paintThemeIcon(); });
 matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", paintThemeIcon);
